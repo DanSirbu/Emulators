@@ -336,7 +336,6 @@ void run_iteration() {
                     for(int i = 0; i <= x; i++) {
                         memory[registers.I + i] = registers.V[i];
                     }
-                    registers.I += x + 1; //TODO is the documentation a lie?
                     break;   
                 }
                 case 0x65:
@@ -344,7 +343,6 @@ void run_iteration() {
                     for(int i = 0; i <= x; i++) {
                         registers.V[i] = memory[registers.I + i];
                     }
-                    registers.I += x + 1; //TODO is the documentation a lie?
                     break;   
                 }
                 default:
