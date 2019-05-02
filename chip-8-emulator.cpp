@@ -74,7 +74,7 @@ uint8_t keypad[16];
 
 uint8_t screen[SCREEN_WIDTH * SCREEN_HEIGHT];
 bool drawFlag;
-
+int lastPressedKey = -1;
 void big_to_small_endian(char *buf, int size) {
     uint8_t buf2[size];
     for(int x = 0; x < size; x++) {
@@ -161,6 +161,9 @@ void update_physical_key_presses() {
         if(key_to_keypad_map.find(key) != key_to_keypad_map.end()) {
             int keypadKey = key_to_keypad_map.find(key)->second;
             keypad[keypadKey] = pressed;
+            if(pressed) {
+                lastPressedKey = keypadKey;
+            }
         }
         //printf("Key: %c\n", e.key.keysym.sym);
         //while(SDL_PollEvent(&e) != 0);
@@ -377,7 +380,12 @@ void run_iteration() {
                 }
                 case 0x0A:
                 {
-                    //TODO
+                    //TODO use conditional variable
+                    while(lastPressedKey == -1) {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                    }
+                    registers.V[x] = lastPressedKey;
+                    lastPressedKey = -1;
                     break;
                 }
                 case 0x15:
