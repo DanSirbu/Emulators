@@ -106,7 +106,7 @@ void loadProgram() {
     //const char *filename = "Airplane.ch8";
     //const char *filename = "Rocket Launch [Jonas Lindstedt].ch8";
     //const char *filename = "BC_test.ch8";
-    const char *filename = "BLINKY.ch8";
+    const char *filename = "roms/BLINKY.ch8";
     
     FILE *file = fopen(filename, "rb");
 
