@@ -105,6 +105,7 @@ bool setPixel(uint32_t x, uint32_t y) {
 void loadProgram() {
     //const char *filename = "Airplane.ch8";
     //const char *filename = "Rocket Launch [Jonas Lindstedt].ch8";
+    //const char *filename = "BC_test.ch8";
     const char *filename = "BLINKY.ch8";
     
     FILE *file = fopen(filename, "rb");
@@ -178,7 +179,7 @@ void run_iteration() {
     if(registers.pc == 0x07AA) {
         //debug = true;
     }
-    print_registers(opcode);
+    //print_registers(opcode);
     if(debug) {
         char test[100];
         std::cin >> test;
@@ -236,8 +237,8 @@ void run_iteration() {
         {
             if((opcode & 0xF) == 0x0) {
                 if(registers.V[x] == registers.V[y]) {
-                registers.pc += 2;
-            }
+                    registers.pc += 2;
+                }
             } else {
                 printf("Unhandled opcode 0x%X\n", opcode);
             }
@@ -374,10 +375,11 @@ void run_iteration() {
                     registers.V[x] = delay_timer;
                     break;   
                 }
-                /*case 0x0A:
+                case 0x0A:
                 {
+                    //TODO
                     break;
-                }*/
+                }
                 case 0x15:
                 {
                     delay_timer = registers.V[x];
@@ -457,17 +459,28 @@ void updateScreen(SDL_Renderer *renderer, SDL_Texture *sdlTexture) {
 void stop(int signum) {
     exit(0);
 }
-int main() {
+int CHIP8_FREQUENCY = 540;
+int chip8() {
     memset(memory, 0, sizeof(memory));
+    memset(keypad, 0, sizeof(keypad));
     delay_timer = 0;
+    sound_timer = 0;
     registers.pc = 0x200;
 
     loadProgram();
 
+    //CHIP-8 runs at 60 Hz, so 1 instruction per 16.666 milliseconds
+
+    while(true){
+        run_iteration();
+        std::this_thread::sleep_for(std::chrono::milliseconds((uint16_t)(1.0/CHIP8_FREQUENCY * 1000)));
+    }
+}
+int main() {
     signal(SIGINT, stop);
 
-    int scale = 8;
 
+    int scale = 8;
     SDL_Init(SDL_INIT_VIDEO);
     SDL_Window *window = SDL_CreateWindow("Chip-8", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH * scale, SCREEN_HEIGHT * scale, SDL_WINDOW_SHOWN);
     SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, 0);
@@ -475,13 +488,15 @@ int main() {
     SDL_RenderSetLogicalSize(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
 
     SDL_Texture *sdlTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 64, 32);
-    
 
+    std::thread t1(chip8);
+    std::thread input_thread(update_physical_key_presses);
     while(true) {
-        run_iteration();
         updateScreen(renderer, sdlTexture);
-        //std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
+    //Does not get here
+    t1.join();
     return 0;
 }
