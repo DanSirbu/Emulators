@@ -4,6 +4,7 @@
 #include <chrono>
 #include <thread>
 #include <signal.h>
+#include <map>
 
 #define FLAG_REG 0xF
 #define SCREEN_WIDTH 64
@@ -30,6 +31,33 @@ unsigned char fontset[80] =
     0xF0, 0x80, 0xF0, 0x80, 0x80  // F 
 };
 
+std::map<int, int> createMap() {
+    std::map<int, int> m;
+    //m['q'] = 1;
+    //m['w'] = 2;
+    m['w'] = 3; //up
+    //m['r'] = 0xC;
+
+    //m['a'] = 4;
+    //m['s'] = 5;
+    m['s'] = 6; //Down
+    //m['f'] = 0xD;
+
+    m['a'] = 7; //left
+    m['d'] = 8; //right
+    //m['c'] = 9;
+    //m['v'] = 0xE;    
+    
+    //m['g'] = 0xA;
+    //m['h'] = 0;
+    //m['j'] = 0xB;
+    //m['k'] = 0xF;
+
+    return m;
+}
+
+std::map<int, int> key_to_keypad_map = createMap();
+
 struct Regs {
     uint8_t V[16];
     uint16_t I; //memory addresses, only 12 bits used since memory 0-4095
@@ -42,6 +70,7 @@ struct Regs registers;
 uint8_t memory[4096];
 uint16_t stack[16];
 uint8_t delay_timer, sound_timer;
+uint8_t keypad[16];
 
 uint8_t screen[SCREEN_WIDTH * SCREEN_HEIGHT];
 bool drawFlag;
@@ -114,6 +143,27 @@ void print_registers(uint16_t opcode) {
         printf("0x%04X\n", stack[x]);
     }
     printf("***********************************************\n");
+}
+
+void update_physical_key_presses() {
+    SDL_Event e;
+    while(true) {
+        SDL_WaitEvent(&e);
+        int pressed = 0;
+        if(e.type == SDL_KEYDOWN) {
+            pressed = 1;
+        } else if(e.type == SDL_KEYUP) {
+            pressed = 0;
+        }
+
+        char key = e.key.keysym.sym;
+        if(key_to_keypad_map.find(key) != key_to_keypad_map.end()) {
+            int keypadKey = key_to_keypad_map.find(key)->second;
+            keypad[keypadKey] = pressed;
+        }
+        //printf("Key: %c\n", e.key.keysym.sym);
+        //while(SDL_PollEvent(&e) != 0);
+    }
 }
 
 void make_sound() {
@@ -291,6 +341,30 @@ void run_iteration() {
                 }
             }
         break;
+        }
+        case 0xE000:
+        {
+            switch (opcode & 0xFF)
+            {
+                case 0x9E:
+                    if(keypad[registers.V[x]] == 1) {
+                        registers.pc += 2;
+                    }
+                    break;
+                case 0xA1:
+                {
+                    if(keypad[registers.V[x]] == 0) {
+                        registers.pc += 2;
+                    }
+                    break;
+                }
+                default:
+                {
+                    printf("Unhandled opcode 0x%X\n", opcode);
+                    break;
+                }
+            }
+            break;
         }
         case 0xF000:
         {
