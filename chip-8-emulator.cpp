@@ -184,8 +184,12 @@ void run_iteration() {
         }
         case 0x5000: //5xy0 skip next instruction if Vx == Vy
         {
-            if(registers.V[x] == y) {
+            if((opcode & 0xF) == 0x0) {
+                if(registers.V[x] == registers.V[y]) {
                 registers.pc += 2;
+            }
+            } else {
+                printf("Unhandled opcode 0x%X\n", opcode);
             }
             break;
         }
