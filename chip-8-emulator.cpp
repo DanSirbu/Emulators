@@ -41,7 +41,7 @@ struct Regs {
 struct Regs registers;
 uint8_t memory[4096];
 uint16_t stack[16];
-uint8_t delay_timer;
+uint8_t delay_timer, sound_timer;
 
 uint8_t screen[SCREEN_WIDTH * SCREEN_HEIGHT];
 bool drawFlag;
@@ -116,10 +116,10 @@ void print_registers(uint16_t opcode) {
     printf("***********************************************\n");
 }
 
-/*uint16_t pop16() {
-    uint16_t val = stack[registers.sp] << 8 | stack[registers.sp + 1];
-    registers.sp += 2;
-}*/
+void make_sound() {
+    //TODO
+}
+
 bool debug = false;
 void run_iteration() {
     //fetch
@@ -309,10 +309,11 @@ void run_iteration() {
                     delay_timer = registers.V[x];
                     break;   
                 }
-                /*case 0x18:
+                case 0x18:
                 {
+                    sound_timer = registers.V[x];
                     break;   
-                }*/
+                }
                 case 0x1E:
                 {
                     registers.V[FLAG_REG] = ((0xFFFF - registers.I) < registers.V[x]) ? 1 : 0;
@@ -358,6 +359,14 @@ void run_iteration() {
             printf("Unhandled opcode 0x%X\n", opcode);
             break;
         }
+    }
+
+    if(delay_timer > 0) {
+        delay_timer--;
+    }
+    if(sound_timer > 0) {
+        make_sound();
+        sound_timer--;
     }
 }
 
