@@ -102,12 +102,7 @@ bool setPixel(uint32_t x, uint32_t y) {
     return screen[x + y * SCREEN_WIDTH] == 0;
 }
 
-void loadProgram() {
-    //const char *filename = "Airplane.ch8";
-    //const char *filename = "Rocket Launch [Jonas Lindstedt].ch8";
-    //const char *filename = "BC_test.ch8";
-    const char *filename = "roms/BLINKY.ch8";
-    
+void loadProgram(const char *filename) {
     FILE *file = fopen(filename, "rb");
 
     int block_size = 1024;
@@ -468,14 +463,14 @@ void stop(int signum) {
     exit(0);
 }
 int CHIP8_FREQUENCY = 540;
-int chip8() {
+int chip8(const char *filename) {
     memset(memory, 0, sizeof(memory));
     memset(keypad, 0, sizeof(keypad));
     delay_timer = 0;
     sound_timer = 0;
     registers.pc = 0x200;
 
-    loadProgram();
+    loadProgram(filename);
 
     //CHIP-8 runs at 60 Hz, so 1 instruction per 16.666 milliseconds
 
@@ -484,9 +479,14 @@ int chip8() {
         std::this_thread::sleep_for(std::chrono::milliseconds((uint16_t)(1.0/CHIP8_FREQUENCY * 1000)));
     }
 }
-int main() {
+int main(int argc, char **argv) {
     signal(SIGINT, stop);
 
+    if(argc == 1) {
+        printf("Usage: %s ROM_FILE\n", argv[0]);
+        exit(-1);
+    }
+    const char *filename = argv[1];
 
     int scale = 8;
     SDL_Init(SDL_INIT_VIDEO);
@@ -497,7 +497,7 @@ int main() {
 
     SDL_Texture *sdlTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 64, 32);
 
-    std::thread t1(chip8);
+    std::thread t1(chip8, filename);
     std::thread input_thread(update_physical_key_presses);
     while(true) {
         updateScreen(renderer, sdlTexture);
