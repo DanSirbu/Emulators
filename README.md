@@ -14,6 +14,6 @@ Dependencies
     - SDL2 graphics library and pthreads
 
 License
-------
+-------
 
-[Do what the fuck you want public license License]: http://www.wtfpl.net/
+Do what the fuck you want public license License: http://www.wtfpl.net/
